@@ -33,6 +33,20 @@
   (make-parameter "atlona"))
 
 
+(define-type Port-Number
+  (U 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15))
+
+(define-type Output
+  (U Port-Number))
+
+(define-type Input
+  (U 'null Port-Number))
+
+
+(define-predicate input? Input)
+(define-predicate output? Output)
+
+
 (device-path
   (command-line
     #:program "atlona-driver"
@@ -50,39 +64,41 @@
     (begin (cast device-path Path-String))))
 
 
-(: port-number? (-> Any Boolean : #:+ Byte))
-(define (port-number? v)
-  (and (exact-nonnegative-integer? v)
-       (>= v 0)
-       (<= v 15)))
+(: string->input (-> String Input))
+(define (string->input str)
+  (let ((value (string->number str)))
+    (cond
+      ((and value (exact-positive-integer? value))
+       (assert (sub1 value) input?))
+
+      (else 'null))))
 
 
-(: string->port-number (-> String Byte))
-(define (string->port-number str)
-  (define value
-    (string->number str))
+(: string->output (-> String Output))
+(define (string->output str)
+  (let ((value (string->number str)))
+    (cond
+      ((and value (exact-positive-integer? value))
+       (assert (sub1 value) output?))
 
-  (unless value
-    (error 'string->port-number "~s: not a number" str))
-
-  (assert value byte?))
+      (else
+       (error 'string->output "~s: invalid output" str)))))
 
 
-(: parse-status (-> String (Listof Byte)))
+(: parse-status (-> String (Listof Input)))
 (define (parse-status line)
-  (define status : (Vectorof Byte)
-    (make-vector 16 0))
+  (define status : (Vectorof Input)
+    (make-vector 16 'null))
 
   (define parts
     (regexp-match* #rx"x[0-9]+AVx[0-9]+" line))
 
   (for ((part parts))
-    (match-let (((regexp #rx"x([0-9]+)AVx([0-9]+)" (list _ in-str out-str)) part))
-      (when* ((in  (string->port-number (cast in-str String)))
-              (out (string->port-number (cast out-str String))))
-        (vector-set! status
-                     (cast (sub1 out) Integer)
-                     (cast (sub1 in) Byte)))))
+    (match-let (((list in-str out-str)
+                 (regexp-match* #rx"[0-9]+" part)))
+      (let ((input (string->input in-str))
+            (output (string->output out-str)))
+        (vector-set! status output input))))
 
   (vector->list status))
 
@@ -131,11 +147,27 @@
        (write-string "Status\r\n" out))
 
       ((hash-lookup ('request "connect")
-                    ('input (? port-number? input))
-                    ('output (? port-number? output)))
+                    ('input (? input? input))
+                    ('output (? output? output)))
        (parameterize ((current-output-port out))
-         (printf "x~aAVx~a\r\n" (add1 input) (add1 output))
+         (if (eq? input 'null)
+             (printf "x~a$\r\n" (add1 output))
+             (printf "x~aAVx~a\r\n" (add1 input) (add1 output)))
          (printf "Status\r\n")))
+
+      ((hash-lookup ('request "disable")
+                    ('output (? output? output)))
+       (parameterize ((current-output-port out))
+         (printf "x~a$\r\n" (add1 output))
+         (printf "Status\r\n")))
+
+      ((hash-lookup ('request "default"))
+       (parameterize ((current-output-port out))
+         (printf "All#\r\n")
+         (printf "Status\r\n")))
+
+      ((hash-lookup ('request "reset"))
+       (write-string "Mreset\r\n" out))
 
       ((hash-lookup ('request "online"))
        (write-string "PWON\r\n" out))
@@ -162,8 +194,10 @@
        (let ((status (parse-status line)))
          (socket-send-json pusher (hasheq 'matrix status))))
 
-      ((pregexp #px"x[0-9]+AVx[0-9]+")
-       ;; Output has been modified by a client, ignore partial status.
+      ((or (regexp #rx"x[0-9]+AVx[0-9]+")
+           (regexp #rx"All#")
+           (regexp #rx"x[0-9]\\$"))
+       ;; Ignore replies to individual commands.
        (void))
 
       (line

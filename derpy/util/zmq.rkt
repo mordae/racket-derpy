@@ -4,6 +4,7 @@
 ;
 
 (require racket/match
+         racket/format
          typed/json)
 
 (require zmq)
@@ -18,13 +19,25 @@
 (define (socket-receive-json-from socket)
   (match (socket-receive socket)
     ((list sender bstr)
-     (values sender (bytes->jsexpr bstr)))))
+     (with-handlers ((exn:fail?
+                       (λ (exn)
+                         (values sender (invalid bstr)))))
+       (values sender (bytes->jsexpr bstr))))
+
+    (else
+     (values #"" (hasheq 'invalid "bogus message")))))
 
 (: socket-receive-json (-> Socket JSExpr))
 (define (socket-receive-json socket)
   (match (socket-receive socket)
     ((list bstr)
-     (bytes->jsexpr bstr))))
+     (with-handlers ((exn:fail?
+                       (λ (exn)
+                         (invalid bstr))))
+       (bytes->jsexpr bstr)))
+
+    (else
+     (hasheq 'invalid "bogus message"))))
 
 
 (: socket-send-json (-> Socket JSExpr Void))
@@ -37,6 +50,11 @@
 (define (socket-send-json-to socket bstr jsexpr)
   (let ((payload (jsexpr->bytes jsexpr)))
     (socket-send socket bstr payload)))
+
+
+(: invalid (-> Bytes JSExpr))
+(define (invalid bstr)
+  (ann (hasheq 'invalid (~s bstr)) JSExpr))
 
 
 ; vim:set ts=2 sw=2 et:

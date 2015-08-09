@@ -17,8 +17,8 @@
 (require derpy/util/zmq)
 
 
-;; Custom logger for device-related events.
 (define-logger device)
+(define-logger client)
 
 
 (: rpc-endpoint (Parameterof String))
@@ -193,7 +193,7 @@
        (device-send "PWOFF"))
 
       (else
-       (log-device-error "[~a] invalid request: ~s" sender request)))))
+       (log-client-error "[~a] invalid request: ~s" sender request)))))
 
 
 ;; Listen to messages from the device and publish them.

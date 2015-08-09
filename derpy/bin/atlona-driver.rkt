@@ -4,6 +4,7 @@
 ;
 
 (require racket/cmdline
+         racket/string
          racket/match
          typed/json)
 
@@ -14,6 +15,10 @@
          zmq)
 
 (require derpy/util/zmq)
+
+
+;; Custom logger for device-related events.
+(define-logger device)
 
 
 (: rpc-endpoint (Parameterof String))
@@ -52,16 +57,16 @@
     #:program "atlona-driver"
     #:once-each
     (("-i" "--identity") identity "ZeroMQ identity for both endpoints"
-                         (endpoint-identity (cast identity String)))
+                         (endpoint-identity (assert identity string?)))
 
     (("-r" "--rpc-bind") endpoint "RPC endpoint to bind to."
-                         (rpc-endpoint (cast endpoint String)))
+                         (rpc-endpoint (assert endpoint string?)))
 
     (("-p" "--pub-bind") endpoint "Publisher endpoint to bind to"
-                         (pub-endpoint (cast endpoint String)))
+                         (pub-endpoint (assert endpoint string?)))
 
     #:args (device-path)
-    (begin (cast device-path Path-String))))
+    (begin (assert device-path path-string?))))
 
 
 (: string->input (-> String Input))
@@ -108,6 +113,20 @@
   (open-serial-port (device-path) #:baudrate 115200))
 
 
+(: device-send (-> String Void))
+(define (device-send command)
+  (parameterize ((current-output-port out))
+    (log-device-debug "-> ~a" command)
+    (printf "~a\r\n" command)))
+
+
+(: device-receive (-> String))
+(define (device-receive)
+  (let ((line (string-trim (assert (read-line in) string?))))
+    (log-device-debug "<- ~a" line)
+    (values line)))
+
+
 ;; To receive commands.
 (define router
   (socket 'router
@@ -128,8 +147,8 @@
     (wrap-evt
       (recurring-alarm-evt 3000)
       (λ (now)
-        (write-string "PWSTA\r\n" out)
-        (write-string "Status\r\n" out))))
+        (device-send "PWSTA")
+        (device-send "Status"))))
 
   (loop (sync timer)))
 
@@ -143,65 +162,58 @@
 
     (match request
       ((hash-lookup ('request "status"))
-       (write-string "PWSTA\r\n" out)
-       (write-string "Status\r\n" out))
+       (device-send "PWSTA")
+       (device-send "Status"))
 
       ((hash-lookup ('request "connect")
                     ('input (? input? input))
                     ('output (? output? output)))
-       (parameterize ((current-output-port out))
-         (if (eq? input 'null)
-             (printf "x~a$\r\n" (add1 output))
-             (printf "x~aAVx~a\r\n" (add1 input) (add1 output)))
-         (printf "Status\r\n")))
+       (if (eq? input 'null)
+           (device-send (format "x~a$" (add1 output)))
+           (device-send (format "x~aAVx~a" (add1 input) (add1 output))))
+
+       (device-send "Status"))
 
       ((hash-lookup ('request "disable")
                     ('output (? output? output)))
-       (parameterize ((current-output-port out))
-         (printf "x~a$\r\n" (add1 output))
-         (printf "Status\r\n")))
+       (device-send (format "x~a$" (add1 output)))
+       (device-send "Status"))
 
       ((hash-lookup ('request "default"))
-       (parameterize ((current-output-port out))
-         (printf "All#\r\n")
-         (printf "Status\r\n")))
+       (device-send "All#")
+       (device-send "Status"))
 
       ((hash-lookup ('request "reset"))
-       (write-string "Mreset\r\n" out))
+       (device-send "Mreset"))
 
       ((hash-lookup ('request "online"))
-       (write-string "PWON\r\n" out))
+       (device-send "PWON"))
 
       ((hash-lookup ('request "offline"))
-       (write-string "PWOFF\r\n" out))
+       (device-send "PWOFF"))
 
       (else
-       (printf "[~a] invalid request: ~s\n" sender request)))))
+       (log-device-error "[~a] invalid request: ~s" sender request)))))
 
 
 ;; Listen to messages from the device and publish them.
 (: pusher-main (-> Nothing))
 (define (pusher-main)
   (loop
-    (match (read-line in)
-      ("PWON\r"
+    (match (device-receive)
+      ("PWON"
        (socket-send-json pusher (hasheq 'status "online")))
 
-      ("PWOFF\r"
+      ("PWOFF"
        (socket-send-json pusher (hasheq 'status "offline")))
 
       ((and (pregexp #px"(x[0-9]+AVx[0-9]+,?){16}") line)
        (let ((status (parse-status line)))
          (socket-send-json pusher (hasheq 'matrix status))))
 
-      ((or (regexp #rx"x[0-9]+AVx[0-9]+")
-           (regexp #rx"All#")
-           (regexp #rx"x[0-9]\\$"))
-       ;; Ignore replies to individual commands.
-       (void))
-
-      (line
-       (printf "-> unknown event: ~s\n" line)))))
+      ;; Ignore other messages, we can't do anything about them anyway.
+      ;; If user wants to debug things, they have already seen them.
+      (else (void)))))
 
 
 ;; Wait until something dies.

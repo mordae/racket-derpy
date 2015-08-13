@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-all: dist/atlona-driver
+all: dist/atlona-driver dist/tesira-driver
 
 dist/%: derpy/bin/%.rkt
 	@mkdir -p dist

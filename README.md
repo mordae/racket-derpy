@@ -1,2 +1,1 @@
-# Derpy: Competently Handling Electronic Devices
-
+# Derpy: Presentation Room Control

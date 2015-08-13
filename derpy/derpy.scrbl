@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@title{Derpy: Competently Handling Electronic Devices}
+@title{Derpy: Presentation Room Control}
 @author+email["Jan Dvořák" "mordae@anilinux.org"]
 
 

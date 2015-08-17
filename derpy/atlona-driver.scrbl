@@ -43,12 +43,17 @@ Would open the @tt{/dev/ttyS3} device and assume the @tt{video} identity.
     To request immediate notifications about both power and matrix status:
 
     @racketblock[(hasheq 'request "status")]
+
+    Unlike elsewhere, this won't cause both @racket['status] and
+    @racket['matrix] to be reported in a single @racket['full] notification.
+    Two separate @racket['delta] notifications are sent one after another.
+    This might eventually change.
   }
 
   @item{
     To connect an input to an output:
 
-    @racketblock[(hasheq 'request "connect"
+    @racketblock[(hasheq 'request "connect!"
                          'input input
                          'output output)]
 
@@ -65,32 +70,32 @@ Would open the @tt{/dev/ttyS3} device and assume the @tt{video} identity.
   @item{
     To remove source from an output:
 
-    @racketblock[(hasheq 'request "disable"
+    @racketblock[(hasheq 'request "disable!"
                          'output output)]
   }
 
   @item{
     To route input @racket[0] to output @racket[0] and so on:
 
-    @racketblock[(hasheq 'request "default")]
+    @racketblock[(hasheq 'request "default!")]
   }
 
   @item{
     To reset the matrix to factory defaults:
 
-    @racketblock[(hasheq 'request "reset")]
+    @racketblock[(hasheq 'request "reset!")]
   }
 
   @item{
     To put the matrix in standby mode (saving power):
 
-    @racketblock[(hasheq 'request "offline")]
+    @racketblock[(hasheq 'request "offline!")]
   }
 
   @item{
-    To wake the matrix from standby mode (to show video again):
+    To wake the matrix from standby mode (to display video again):
 
-    @racketblock[(hasheq 'request "online")]
+    @racketblock[(hasheq 'request "online!")]
   }
 ]
 
@@ -102,20 +107,20 @@ Would open the @tt{/dev/ttyS3} device and assume the @tt{video} identity.
     When the matrix is running and routing video, it reports its power
     status as:
 
-    @racketblock[(hasheq 'status "online")]
+    @racketblock[(hasheq 'delta (hasheq 'status "online"))]
   }
 
   @item{
     When the matrix has been put to standby mode or it has been just turned
     on, it reports its power status as:
 
-   @racketblock[(hasheq 'status "offline")]
+   @racketblock[(hasheq 'delta (hasheq 'status "offline"))]
   }
 
   @item{
     To inform about current setup of the switching matrix:
 
-    @racketblock[(hasheq 'matrix '(0 1 ... 15))]
+    @racketblock[(hasheq 'delta (hasheq 'matrix '(0 1 ... 15)))]
 
     Where every position represents an output (from @racket[0] to @racket[15])
     and the value its current input port.

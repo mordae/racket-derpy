@@ -17,6 +17,10 @@
 (require derpy/util/zmq)
 
 
+(define hashjs
+  (inst hasheq Symbol JSExpr))
+
+
 (define-logger device)
 (define-logger client)
 
@@ -165,7 +169,7 @@
        (device-send "PWSTA")
        (device-send "Status"))
 
-      ((hash-lookup ('request "connect")
+      ((hash-lookup ('request "connect!")
                     ('input (? input? input))
                     ('output (? output? output)))
        (if (eq? input 'null)
@@ -174,22 +178,22 @@
 
        (device-send "Status"))
 
-      ((hash-lookup ('request "disable")
+      ((hash-lookup ('request "disable!")
                     ('output (? output? output)))
        (device-send (format "x~a$" (add1 output)))
        (device-send "Status"))
 
-      ((hash-lookup ('request "default"))
+      ((hash-lookup ('request "default!"))
        (device-send "All#")
        (device-send "Status"))
 
-      ((hash-lookup ('request "reset"))
+      ((hash-lookup ('request "reset!"))
        (device-send "Mreset"))
 
-      ((hash-lookup ('request "online"))
+      ((hash-lookup ('request "online!"))
        (device-send "PWON"))
 
-      ((hash-lookup ('request "offline"))
+      ((hash-lookup ('request "offline!"))
        (device-send "PWOFF"))
 
       (else
@@ -202,14 +206,14 @@
   (loop
     (match (device-receive)
       ("PWON"
-       (socket-send-json pusher (hasheq 'status "online")))
+       (socket-send-json pusher (hashjs 'delta (hashjs 'status "online"))))
 
       ("PWOFF"
-       (socket-send-json pusher (hasheq 'status "offline")))
+       (socket-send-json pusher (hashjs 'delta (hashjs 'status "offline"))))
 
       ((and (pregexp #px"(x[0-9]+AVx[0-9]+,?){16}") line)
        (let ((status (parse-status line)))
-         (socket-send-json pusher (hasheq 'matrix status))))
+         (socket-send-json pusher (hashjs 'delta (hashjs 'matrix status)))))
 
       ;; Ignore other messages, we can't do anything about them anyway.
       ;; If user wants to debug things, they have already seen them.

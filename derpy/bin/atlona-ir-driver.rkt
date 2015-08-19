@@ -101,6 +101,10 @@
 (define-values (in out)
   (tcp-connect extron-host 23))
 
+;; Lock to prevent concurrent access to the socket.
+(define lock
+  (make-semaphore 1))
+
 ;; Discard welcome lines.
 (void (read-line in 'any)
       (read-line in 'any)
@@ -109,11 +113,12 @@
 
 (: device-send (-> String Void))
 (define (device-send command)
-  (parameterize ((current-output-port out))
-    (log-device-debug "-> ~a" command)
-    (printf "W~a|" command)
-    (flush-output)
-    (void (read-line in 'any))))
+  (with-semaphore lock
+    (parameterize ((current-output-port out))
+      (log-device-debug "-> ~a" command)
+      (printf "W~a|" command)
+      (flush-output)
+      (void (read-line in 'any)))))
 
 (: device-connect (-> Input Output Void))
 (define (device-connect in-port out-port)
@@ -164,6 +169,7 @@
     (wrap-evt
       (recurring-alarm-evt 3000)
       (λ (now)
+        (device-send "1PC")
         (report-status))))
 
   (loop (sync timer)))

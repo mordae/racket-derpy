@@ -51,9 +51,11 @@
                          (pub-endpoint (assert endpoint string?)))
 
     #:args (device-address)
-    (with-handlers ((exn:fail? (λ (exn)
-                                 (fail "Connection to ~a failed" device-address))))
-      (new projector% (host (cast device-address String))))))
+    (let ((device-address (cast device-address String)))
+      (with-handlers ((exn:fail?
+                        (λ (exn)
+                          (fail "Connection to ~a failed" device-address))))
+        (new projector% (host device-address))))))
 
 
 (define router

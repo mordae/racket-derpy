@@ -16,6 +16,7 @@
          zmq)
 
 (require derpy/util/zmq
+         derpy/util/error
          derpy/tesira/mixer)
 
 
@@ -56,11 +57,17 @@
                          (pub-endpoint (assert endpoint string?)))
 
     #:args (device-address mixer-alias)
-    (new tesira-mixer%
-         (alias (string->symbol
-                  (cast mixer-alias String)))
-         (device (tesira-connect
-                   (cast device-address String))))))
+    (let ((device-address (cast device-address String))
+          (mixer-alias (cast mixer-alias String)))
+      (with-handlers ((exn:fail:network?
+                        (λ (exn)
+                          (fail "Connect to ~a failed" device-address)))
+                      (exn:fail?
+                        (λ (exn)
+                          (fail "Cannot attach to ~a" mixer-alias))))
+        (new tesira-mixer%
+             (alias (string->symbol mixer-alias))
+             (device (tesira-connect device-address)))))))
 
 
 (: input-number? (-> Any Boolean : #:+ Natural))

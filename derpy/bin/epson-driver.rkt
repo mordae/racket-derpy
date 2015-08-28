@@ -14,7 +14,8 @@
          esc/vp21
          zmq)
 
-(require derpy/util/zmq)
+(require derpy/util/zmq
+         derpy/util/error)
 
 
 (define hashjs
@@ -50,7 +51,9 @@
                          (pub-endpoint (assert endpoint string?)))
 
     #:args (device-address)
-    (new projector% (host (cast device-address String)))))
+    (with-handlers ((exn:fail? (λ (exn)
+                                 (fail "Connection to ~a failed" device-address))))
+      (new projector% (host (cast device-address String))))))
 
 
 (define router

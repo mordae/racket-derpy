@@ -14,7 +14,8 @@
          mordae/evt
          zmq)
 
-(require derpy/util/zmq)
+(require derpy/util/zmq
+         derpy/util/error)
 
 
 (define hashjs
@@ -99,7 +100,9 @@
 
 ;; Connect to the Extron device for IR control.
 (define-values (in out)
-  (tcp-connect extron-host 23))
+  (with-handlers ((exn:fail? (λ (exn)
+                               (fail "Connection to ~a failed" extron-host))))
+    (tcp-connect extron-host 23)))
 
 ;; Lock to prevent concurrent access to the socket.
 (define lock

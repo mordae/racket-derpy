@@ -126,7 +126,7 @@
          (push (hashjs 'delta (hashjs 'mute? mute?)))))
 
       (else
-       (log-client-error "[~a] invalid request: ~s" sender request)))))
+       (log-client-error "[~s] invalid request: ~s" sender request)))))
 
 
 ;; Wait until something dies.

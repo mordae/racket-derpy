@@ -197,7 +197,7 @@
        (device-send "PWOFF"))
 
       (else
-       (log-client-error "[~a] invalid request: ~s" sender request)))))
+       (log-client-error "[~s] invalid request: ~s" sender request)))))
 
 
 ;; Listen to messages from the device and publish them.

@@ -111,34 +111,35 @@ Would connect to the device, scan the @tt{Mixer2} object and assume the
   @item{
     When the device is running, a simple beacon is sent:
 
-    @racketblock[(hasheq 'status "online")]
+    @racketblock[(hasheq 'delta (hasheq 'status "online"))]
   }
 
   @item{
     When an input or output level has been modified:
 
-    @racketblock[(hasheq 'delta (hasheq 'input input-number
-                                        'status (hasheq 'label "Mic 1"
-                                                        'level 0.0
-                                                        'mute? #f)))
+    @racketblock[(hasheq 'delta (hasheq 'input (hasheq 'input input-number
+                                                       'status (hasheq 'label "Mic 1"
+                                                                       'level 0.0
+                                                                        'mute? #f))))
 
-                 (hasheq 'delta (hasheq 'output output-number
-                                        'status (hasheq 'label "Speaker L"
-                                                        'level 0.0
-                                                        'mute? #f)))]
+                 (hasheq 'delta (hasheq 'output (hasheq 'output output-number
+                                                        'status (hasheq 'label "Speaker L"
+                                                                        'level 0.0
+                                                                        'mute? #f))))]
   }
 
   @item{
     When full status have been requested:
 
-    @racketblock[(hasheq 'full (hasheq 'inputs (list
-                                                 (hasheq 'label "Mic 1"
-                                                         'level 0.0
-                                                         'mute? #f) ...)
-                                       'outputs (list
-                                                  (hasheq 'label "Speaker L"
-                                                          'level 0.0
-                                                          'mute? #f) ...)))]
+    @racketblock[(hasheq 'full (hasheq 'status "online"
+                                       'mixer (hasheq 'inputs (list
+                                                                (hasheq 'label "Mic 1"
+                                                                        'level 0.0
+                                                                        'mute? #f) ...)
+                                                       'outputs (list
+                                                                  (hasheq 'label "Speaker L"
+                                                                          'level 0.0
+                                                                          'mute? #f) ...))))]
   }
 ]
 

@@ -105,12 +105,20 @@
   (socket-send-json pusher value))
 
 
+(: push-line-status (-> (Instance Tesira-Mixer-Line%) Void))
+(define (push-line-status line)
+  (let ((kind (if (is-a? line tesira-mixer-input%) 'input 'output))
+        (status (send line status))
+        (number (get-field index line)))
+    (push (hashjs 'delta (hashjs kind (hashjs kind number 'status status))))))
+
+
 (: ticker-main (-> Nothing))
 (define (ticker-main)
   (define timer
     (wrap-evt (recurring-alarm-evt 3000)
               (λ (now)
-                (socket-send-json pusher (hashjs 'status "online")))))
+                (push (hashjs 'delta (hashjs 'status "online"))))))
 
   (loop (sync timer)))
 
@@ -123,55 +131,50 @@
 
     (match request
       ((hash-lookup ('request "status"))
-       (push (hashjs 'full (send mixer status))))
+       (push (hashjs 'full (hashjs 'status "online"
+                                   'mixer (send mixer status)))))
 
       ((hash-lookup ('request "set-input-level!")
                     ('input (? input-number? input-number))
                     ('level (? level-value? level-value)))
        (let ((input (send mixer get-input input-number)))
          (send input set-level! level-value)
-         (push (hashjs 'delta (hashjs 'input input-number
-                                      'status (send input status))))))
+         (push-line-status input)))
 
       ((hash-lookup ('request "set-output-level!")
                     ('output (? output-number? output-number))
                     ('level (? level-value? level-value)))
        (let ((output (send mixer get-output output-number)))
          (send output set-level! level-value)
-         (push (hashjs 'delta (hashjs 'output output-number
-                                      'status (send output status))))))
+         (push-line-status output)))
 
       ((hash-lookup ('request "set-input-mute!")
                     ('input (? input-number? input-number))
                     ('mute? (? boolean? mute?)))
        (let ((input (send mixer get-input input-number)))
          (send input set-mute! mute?)
-         (push (hashjs 'delta (hashjs 'input input-number
-                                      'status (send input status))))))
+         (push-line-status input)))
 
       ((hash-lookup ('request "set-output-mute!")
                     ('output (? output-number? output-number))
                     ('mute? (? boolean? mute?)))
        (let ((output (send mixer get-output output-number)))
          (send output set-mute! mute?)
-         (push (hashjs 'delta (hashjs 'output output-number
-                                      'status (send output status))))))
+         (push-line-status output)))
 
       ((hash-lookup ('request "set-input-label!")
                     ('input (? input-number? input-number))
                     ('label (? string? label)))
        (let ((input (send mixer get-input input-number)))
          (send input set-label! label)
-         (push (hashjs 'delta (hashjs 'input input-number
-                                      'status (send input status))))))
+         (push-line-status input)))
 
       ((hash-lookup ('request "set-output-label!")
                     ('output (? output-number? output-number))
                     ('label (? string? label)))
        (let ((output (send mixer get-output output-number)))
          (send output set-label! label)
-         (push (hashjs 'delta (hashjs 'output output-number
-                                      'status (send output status))))))
+         (push-line-status output)))
 
       (else
        (log-client-error "[~s] invalid request: ~s" sender request)))))

@@ -2,7 +2,7 @@
 
 @(define atlona-url "http://atlona.com/product/at-pro2hd1616m/")
 
-@title{@exec{atlona-driver}: HDMI to HDBase-T Matrix Switcher}
+@title[#:tag "atlona"]{@exec{atlona-driver}: HDMI to HDBase-T Matrix Switcher}
 
 This driver was written to control the @link[atlona-url]{Atlona AT-PRO2HD1616M}
 HDMI to HDBase-T matrix switcher. Matrix switcher is basically a device that

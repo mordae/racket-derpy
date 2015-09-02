@@ -1,5 +1,5 @@
 #lang setup/infotab
 
-(define scribblings '(("derpy.scrbl")))
+(define scribblings '(("derpy.scrbl" (multi-page))))
 
 ; vim:set ts=2 sw=2 et:

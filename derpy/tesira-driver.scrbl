@@ -2,7 +2,7 @@
 
 @(define tesira-url "http://www.biamp.com/products/tesira/")
 
-@title{@exec{tesira-driver}: Networked Audio Mixer}
+@title[#:tag "tesira"]{@exec{tesira-driver}: Networked Audio Mixer}
 
 This driver was written to control the @link[tesira-url]{Biamp Tesira}
 devices. These devices act as a fully programmable network-capable audio

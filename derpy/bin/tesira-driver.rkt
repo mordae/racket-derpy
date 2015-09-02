@@ -12,12 +12,12 @@
          mordae/match
          mordae/evt
          tesira/util
+         tesira/mixer
          tesira
          zmq)
 
 (require derpy/util/zmq
-         derpy/util/error
-         derpy/tesira/mixer)
+         derpy/util/error)
 
 
 (define hashjs

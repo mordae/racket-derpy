@@ -20,6 +20,7 @@ complicate automation but suffices for human control.
 @include-section["atlona-driver.scrbl"]
 @include-section["tesira-driver.scrbl"]
 @include-section["epson-driver.scrbl"]
+@include-section["pex-driver.scrbl"]
 
 
 @; vim:set ft=scribble sw=2 ts=2 et:

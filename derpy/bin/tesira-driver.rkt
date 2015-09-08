@@ -109,7 +109,7 @@
 (define (push-line-status line)
   (let ((kind (if (is-a? line tesira-mixer-input%) 'input 'output))
         (status (send line status))
-        (number (get-field index line)))
+        (number (sub1 (get-field index line))))
     (push (hashjs 'delta (hashjs kind (hashjs kind number 'status status))))))
 
 

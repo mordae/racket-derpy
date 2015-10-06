@@ -112,6 +112,12 @@
         (number (sub1 (get-field index line))))
     (push (hashjs 'delta (hashjs kind (hashjs kind number 'status status))))))
 
+(: push-full-status (-> Void))
+(define (push-full-status)
+  (let ((mixer-status (send mixer status)))
+    (push (hashjs 'full (hashjs 'status "online"
+                                'mixer mixer-status)))))
+
 
 (: ticker-main (-> Nothing))
 (define (ticker-main)
@@ -119,6 +125,16 @@
     (wrap-evt (recurring-alarm-evt 3000)
               (λ (now)
                 (push (hashjs 'delta (hashjs 'status "online"))))))
+
+  (loop (sync timer)))
+
+
+(: status-main (-> Nothing))
+(define (status-main)
+  (define timer
+    (wrap-evt (recurring-alarm-evt 30000)
+              (λ (now)
+                (push-full-status))))
 
   (loop (sync timer)))
 
@@ -131,8 +147,7 @@
 
     (match request
       ((hash-lookup ('request "status"))
-       (push (hashjs 'full (hashjs 'status "online"
-                                   'mixer (send mixer status)))))
+       (push-full-status))
 
       ((hash-lookup ('request "set-input-level!")
                     ('input (? input-number? input-number))
@@ -182,7 +197,8 @@
 
 ;; Wait until something dies.
 (void (sync (thread router-main)
-            (thread ticker-main)))
+            (thread ticker-main)
+            (thread status-main)))
 
 
 ; vim:set ts=2 sw=2 et:

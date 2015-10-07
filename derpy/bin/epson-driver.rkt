@@ -69,6 +69,12 @@
           #:identity (endpoint-identity)))
 
 
+(define-type Aspect-String
+  (U "normal" "4:3" "16:9" "auto" "full" "zoom" "native"))
+
+(define-predicate aspect-string? Aspect-String)
+
+
 (: push (-> JSExpr Void))
 (define (push value)
   (socket-send-json pusher value))
@@ -78,9 +84,12 @@
 (define (push-status)
   (let ((status  (send device get-power-status))
         (mute?   (send device get-mute?))
-        (freeze? (send device get-freeze?)))
-    (let ((str-status (symbol->string status)))
+        (freeze? (send device get-freeze?))
+        (aspect  (send device get-aspect)))
+    (let ((str-status (symbol->string status))
+          (str-aspect (symbol->string aspect)))
       (push (hashjs 'full (hashjs 'status str-status
+                                  'aspect str-aspect
                                   'mute? mute?
                                   'freeze? freeze?))))))
 
@@ -110,6 +119,14 @@
 
       ((hash-lookup ('request "offline!"))
        (send device offline!))
+
+      ((hash-lookup ('request "set-aspect!")
+                    ('aspect (? aspect-string? str-aspect)))
+       (let ((aspect (cast (string->symbol str-aspect) Projector-Aspect)))
+         (send device set-aspect! aspect))
+
+       (let ((aspect (send device get-aspect)))
+         (push (hashjs 'delta (hashjs 'aspect (symbol->string aspect))))))
 
       ((hash-lookup ('request "set-freeze!")
                     ('freeze? (? boolean? freeze?)))

@@ -114,6 +114,7 @@
   (define timer
     (wrap-evt (recurring-alarm-evt 5000)
               (λ (now)
+                (log-client-info "[periodic] status")
                 (push-full-status))))
 
   (loop (sync timer)))
@@ -127,11 +128,13 @@
 
     (match request
       ((hash-lookup ('request "status"))
+       (log-client-info "[~s] status" sender)
        (push-full-status))
 
       ((hash-lookup ('request "set-on!")
                     ('relay (? exact-positive-integer? relay-id))
                     ('on? (? boolean? on?)))
+       (log-client-info "[~s] set-on! ~a ~a" sender relay-id on?)
        (let ((relay (send bank get-relay relay-id)))
          (send relay set-on! on?)
          (push-relay-status relay)))
@@ -139,6 +142,7 @@
       ((hash-lookup ('request "set-level!")
                     ('fader (? exact-positive-integer? fader-id))
                     ('level (? exact-nonnegative-integer? level)))
+       (log-client-info "[~s] set-level! ~a ~a" sender fader-id level)
        (let ((fader (send bank get-fader fader-id)))
          (send fader set-level! level)
          (push-fader-status fader)))
@@ -146,6 +150,7 @@
       ((hash-lookup ('request "fade-to-level!")
                     ('fader (? exact-positive-integer? fader-id))
                     ('level (? exact-nonnegative-integer? level)))
+       (log-client-info "[~s] fade-to-level! ~a ~a" sender fader-id level)
        (let ((fader (send bank get-fader fader-id)))
          (send fader fade-to-level! level)
          (push-fader-status fader)))

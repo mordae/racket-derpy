@@ -50,6 +50,26 @@ Would connect to the device and assume the @tt{projector-1} identity.
   }
 
   @item{
+    To control aspect ratio of projection:
+
+    @racketblock[(hasheq 'request "set-aspect!"
+                         'aspect aspect)]
+
+    Valid @racket[aspect] values are listed below, but not all of them
+    are supported by all projector types:
+
+    @itemlist[
+      @item{@racket["normal"] --- fit vertically}
+      @item{@racket["4:3"] --- force 4:3}
+      @item{@racket["16:9"] --- force 16:9}
+      @item{@racket["auto"] --- useless magic}
+      @item{@racket["full"] --- deform to fit}
+      @item{@racket["zoom"] --- fit horizontally}
+      @item{@racket["native"] --- no scaling}
+    ]
+  }
+
+  @item{
     To control freezing of currently projected picture:
 
     @racketblock[(hasheq 'request "set-freeze!"
@@ -85,10 +105,12 @@ Would connect to the device and assume the @tt{projector-1} identity.
     5 seconds:
 
     @racketblock[(hasheq 'full (hasheq 'status status
+                                       'aspect aspect
                                        'mute? mute?
                                        'freeze? freeze?))]
 
-    Where @racket[mute?] is set to @racket[#t] when blanking is active,
+    Where @racket[aspect] is the current aspect ratio (see above),
+    @racket[mute?] is set to @racket[#t] when blanking is active,
     @racket[freeze?] is set to @racket[#t] when the picture is frozen,
     and @racket[status] represents current power status.
 
@@ -106,11 +128,12 @@ Would connect to the device and assume the @tt{projector-1} identity.
   }
 
   @item{
-    When either @racket[mute?] or @racket[freeze?] changes, partial status
-    update is immediately published:
+    When either @racket[aspect], @racket[mute?] or @racket[freeze?] changes,
+    partial status update is published immediately:
 
-    @racketblock[(hasheq 'delta (hasheq 'mute? mute?))
-                 (hasheq 'delta (hasheq 'freeze? freeze?))]
+    @racketblock[(hasheq 'delta (hasheq 'aspect aspect))
+                 (hasheq 'delta (hasheq 'freeze? freeze?))
+                 (hasheq 'delta (hasheq 'mute? mute?))]
   }
 ]
 

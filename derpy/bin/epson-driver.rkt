@@ -112,16 +112,20 @@
 
     (match request
       ((hash-lookup ('request "status"))
+       (log-client-info "[~s] status" sender)
        (push-status))
 
       ((hash-lookup ('request "online!"))
+       (log-client-info "[~s] online!" sender)
        (send device online!))
 
       ((hash-lookup ('request "offline!"))
+       (log-client-info "[~s] offline!" sender)
        (send device offline!))
 
       ((hash-lookup ('request "set-aspect!")
                     ('aspect (? aspect-string? str-aspect)))
+       (log-client-info "[~s] set-aspect! ~a" sender str-aspect)
        (let ((aspect (cast (string->symbol str-aspect) Projector-Aspect)))
          (send device set-aspect! aspect))
 
@@ -130,6 +134,7 @@
 
       ((hash-lookup ('request "set-freeze!")
                     ('freeze? (? boolean? freeze?)))
+       (log-client-info "[~s] set-freeze! ~a" sender freeze?)
        (send device set-freeze! freeze?)
 
        (let ((freeze? (send device get-freeze?)))
@@ -137,6 +142,7 @@
 
       ((hash-lookup ('request "set-mute!")
                     ('mute? (? boolean? mute?)))
+       (log-client-info "[~s] set-mute! ~a" sender mute?)
        (send device set-mute! mute?)
 
        (let ((mute? (send device get-mute?)))

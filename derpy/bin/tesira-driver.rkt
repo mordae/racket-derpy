@@ -147,13 +147,14 @@
 
     (match request
       ((hash-lookup ('request "status"))
-       (log-client-info "[~s] status")
+       (log-client-info "[~s] status" sender)
        (push-full-status))
 
       ((hash-lookup ('request "set-input-level!")
                     ('input (? input-number? input-number))
                     ('level (? level-value? level-value)))
-       (log-client-info "[~s] set-input-level! ~a ~a" input-number level-value)
+       (log-client-info "[~s] set-input-level! ~a ~a"
+                        sender input-number level-value)
        (let ((input (send mixer get-input input-number)))
          (send input set-level! level-value)
          (push-line-status input)))
@@ -162,7 +163,7 @@
                     ('output (? output-number? output-number))
                     ('level (? level-value? level-value)))
        (log-client-info "[~s] set-output-level! ~a ~a"
-                        output-number level-value)
+                        sender output-number level-value)
        (let ((output (send mixer get-output output-number)))
          (send output set-level! level-value)
          (push-line-status output)))
@@ -170,7 +171,8 @@
       ((hash-lookup ('request "set-input-mute!")
                     ('input (? input-number? input-number))
                     ('mute? (? boolean? mute?)))
-       (log-client-info "[~s] set-input-mute! ~a ~a" input-number mute?)
+       (log-client-info "[~s] set-input-mute! ~a ~a"
+                        sender input-number mute?)
        (let ((input (send mixer get-input input-number)))
          (send input set-mute! mute?)
          (push-line-status input)))
@@ -178,7 +180,8 @@
       ((hash-lookup ('request "set-output-mute!")
                     ('output (? output-number? output-number))
                     ('mute? (? boolean? mute?)))
-       (log-client-info "[~s] set-output-mute! ~a ~a" output-number mute?)
+       (log-client-info "[~s] set-output-mute! ~a ~a"
+                        sender output-number mute?)
        (let ((output (send mixer get-output output-number)))
          (send output set-mute! mute?)
          (push-line-status output)))
@@ -186,7 +189,8 @@
       ((hash-lookup ('request "set-input-label!")
                     ('input (? input-number? input-number))
                     ('label (? string? label)))
-       (log-client-info "[~s] set-input-label! ~a ~s" input-number label)
+       (log-client-info "[~s] set-input-label! ~a ~s"
+                        sender input-number label)
        (let ((input (send mixer get-input input-number)))
          (send input set-label! label)
          (push-line-status input)))
@@ -194,7 +198,8 @@
       ((hash-lookup ('request "set-output-label!")
                     ('output (? output-number? output-number))
                     ('label (? string? label)))
-       (log-client-info "[~s] set-output-label! ~a ~s" output-number label)
+       (log-client-info "[~s] set-output-label! ~a ~s"
+                        sender output-number label)
        (let ((output (send mixer get-output output-number)))
          (send output set-label! label)
          (push-line-status output)))

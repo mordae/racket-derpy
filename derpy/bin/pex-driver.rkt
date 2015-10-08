@@ -114,7 +114,6 @@
   (define timer
     (wrap-evt (recurring-alarm-evt 5000)
               (λ (now)
-                (log-client-info "[periodic] status")
                 (push-full-status))))
 
   (loop (sync timer)))

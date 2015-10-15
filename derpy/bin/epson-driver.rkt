@@ -72,7 +72,11 @@
 (define-type Aspect-String
   (U "normal" "4:3" "16:9" "auto" "full" "zoom" "native"))
 
+(define-type Format-String
+  (U "4:3" "16:9" "16:10"))
+
 (define-predicate aspect-string? Aspect-String)
+(define-predicate format-string? Format-String)
 
 
 (: push (-> JSExpr Void))
@@ -85,13 +89,17 @@
   (let ((status  (send device get-power-status))
         (mute?   (send device get-mute?))
         (freeze? (send device get-freeze?))
-        (aspect  (send device get-aspect)))
+        (aspect  (send device get-aspect))
+        (format  (send device get-format)))
     (let ((str-status (symbol->string status))
-          (str-aspect (symbol->string aspect)))
-      (push (hashjs 'full (hashjs 'status str-status
-                                  'aspect str-aspect
-                                  'mute? mute?
-                                  'freeze? freeze?))))))
+          (str-aspect (symbol->string aspect))
+          (str-format (symbol->string format)))
+      (push (hashjs 'full (hash-set
+                            (hashjs 'status str-status
+                                    'aspect str-aspect
+                                    'mute? mute?
+                                    'freeze? freeze?)
+                            'format str-format))))))
 
 
 (: ticker-main (-> Nothing))
@@ -131,6 +139,15 @@
 
        (let ((aspect (send device get-aspect)))
          (push (hashjs 'delta (hashjs 'aspect (symbol->string aspect))))))
+
+      ((hash-lookup ('request "set-format!")
+                    ('format (? format-string? str-format)))
+       (log-client-info "[~s] set-format! ~a" sender str-format)
+       (let ((format (cast (string->symbol str-format) Projector-Format)))
+         (send device set-format! format))
+
+       (let ((format (send device get-format)))
+         (push (hashjs 'delta (hashjs 'format (symbol->string format))))))
 
       ((hash-lookup ('request "set-freeze!")
                     ('freeze? (? boolean? freeze?)))

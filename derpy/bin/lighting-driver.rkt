@@ -108,7 +108,7 @@
 (: channels->status (-> (Listof Natural) JSExpr))
 (define (channels->status channels)
   (match channels
-    ((list pan _ tilt _ _ power color _ _ _ _ _ _ _ focus _ shutter volume _)
+    ((list* pan _ tilt _ _ power color _ _ _ _ _ _ _ focus _ shutter volume _)
      (hashjs 'level (hashjs 'pan pan
                             'tilt tilt
                             'focus focus
@@ -139,8 +139,8 @@
 
 (: get-status (-> JSExpr))
 (define (get-status)
-  (hashjs 'left (send cc get-status (cast 0 Group))
-          'right (send cc get-status (cast 8 Group))))
+  (hashjs 'left (channels->status (send cc get-status (cast 0 Group)))
+          'right (channels->status (send cc get-status (cast 8 Group)))))
 
 (: push-status (-> Void))
 (define (push-status)
